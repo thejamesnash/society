@@ -1,12 +1,229 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>THE SOCIETY</title>
-  </head>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SVG to Three.js Mesh</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a0f; overflow: hidden; }
+    canvas { display: block; }
+    #info {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.3);
+      font-family: monospace;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+    }
+  </style>
+</head>
 <body>
 
-<h1>THE SOCIETY</h1>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js"
+      }
+    }
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+
+    // ── Scene setup ──────────────────────────────────────────────
+    const scene    = new THREE.Scene();
+    const camera   = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000);
+    camera.position.set(0, 0, 220);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(devicePixelRatio);
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    // ── Lights ───────────────────────────────────────────────────
+    scene.add(new THREE.AmbientLight(0xffe0a0, 2.0));
+
+    const lights = [
+      [0xfff5cc, 2.0,  80,  120,  100],
+      [0xffcc44, 1.5, -80,  -40,   60],
+      [0xffaa00, 1.5,   0, -100,  -80],
+      [0xfff0cc, 1.5, -60,   80, -100],
+      [0xffdd88, 1.5,   0, -120,   50],
+      [0xffeebb, 1.5, 100,  -60,   30],
+      [0xffffcc, 1.5, -100,  60,  -30],
+      [0xffcc88, 1.5,   0,  100,  -60],
+    ];
+    lights.forEach(([color, intensity, x, y, z]) => {
+      const l = new THREE.DirectionalLight(color, intensity);
+      l.position.set(x, y, z);
+      scene.add(l);
+    });
+
+    // ── SVG → Shape ──────────────────────────────────────────────
+    // viewBox: 0 0 86.6 149.99  → centre at (43.3, 75)
+    const cx = 43.3, cy = 75.0;
+
+    // Helper: convert SVG y (top-down) to Three.js y (up)
+    const p = (x, y) => new THREE.Vector2(x - cx, cy - y);
+
+    // The SVG has THREE solid filled regions. We build each as its own Shape.
+    // Outer diamond vertices: top(43.3,0), right(86.6,75), bottom(43.3,150), left(0,75)
+    // Mid-centre point: (43.3, 75)
+    //
+    // Region 1 – Top triangle (top half, minus right inner hole)
+    //   top(43.3,0) → right(86.6,75) → innerRight-left(43.3,75) → innerRight-top(59.58,46.9) ... 
+    // Actually the cleanest read: the SVG fills three quads:
+    //   • Top-left kite:   (43.3,0), (0,75),   (10.78,74.97), (43.3,75) -- wait, re-examine.
+    //
+    // Let's read the path literally:
+    //   Outer:  43.3,0 → 86.6,75 → 43.3,150 → 0,75 → close   (full diamond)
+    //   Hole 1 (right): 10.78,74.97 → 43.31,74.99 → 27.03,103.09  (lower-left void)
+    //   Hole 2 (left):  43.3,75     → 59.58,46.9  → 75.83,75.11   (upper-right void)
+    //
+    // So the solid regions are the diamond MINUS those two triangles.
+    // We decompose into 3 explicit triangles/quads that tile the solid area:
+    //
+    //  A) Top-left triangle:    (43.3,0),  (43.3,75),  (0,75)
+    //  B) Top-right quad:       (43.3,0),  (86.6,75),  (75.83,75.11), (59.58,46.9)
+    //     + small tri:          (86.6,75), (75.83,75.11), (43.3,75)  -- merge into one polygon
+    //  C) Bottom-right triangle:(43.3,75), (86.6,75),  (43.3,150)
+    //  D) Bottom-left quad:     (43.3,75), (10.78,74.97),(0,75),     (43.3,150) -- merge
+    //
+    // Simplest: 4 triangles that exactly tile the solid fill.
+    // Upper-left:  top → centre → left
+    // Upper-right: top → right → [75.83,75] → [59.58,46.9]  (the non-hole part)
+    //   i.e. top(43.3,0) → right(86.6,75) → (75.83,75.11) → (59.58,46.9)  quad
+    //        + top(43.3,0) → (59.58,46.9) → centre (already covered in upper-left? no)
+    //
+    // Let me be rigorous. Solid = diamond - holeLeft - holeRight.
+    // Decompose using the 6 key points:
+    //   T  = (43.3, 0)      top
+    //   R  = (86.6, 75)     right
+    //   B  = (43.3, 150)    bottom
+    //   L  = (0,   75)      left
+    //   C  = (43.3, 75)     centre (shared hole vertex)
+    //   HR1= (10.78,74.97)  hole-right vertex 1
+    //   HR2= (27.03,103.09) hole-right vertex 2  (lower-left hole)
+    //   HL1= (59.58,46.9)   hole-left vertex 1
+    //   HL2= (75.83,75.11)  hole-left vertex 2   (upper-right hole)
+    //
+    // Solid triangles (by inspection, no overlap, full coverage):
+    //   1. T,  C,  L        upper-left
+    //   2. T,  HL1, C       upper-centre sliver (between top and right hole)
+    //   3. T,  R,  HL2      right of upper-right hole -- wait HL2 is AT right edge level
+    //   ...
+    //
+    // Easiest correct decomposition — just polygon-subtract and list faces:
+    //   Solid polygon 1 (upper-left + lower-left, minus lower-left hole):
+    //     T → C → HR1 → L   (quad, left solid piece)
+    //     + C → HR2 → B → ... hmm
+    //
+    // FINAL CLEAN APPROACH: just build 4 non-overlapping triangles manually:
+
+    const extrudeSettings = {
+      depth: 18,
+      bevelEnabled: false,
+    };
+
+    const group = new THREE.Group();
+
+    const material = new THREE.MeshStandardMaterial({
+      color: 0xFFD700,
+      metalness: 1.0,
+      roughness: 0.25,
+      side: THREE.DoubleSide,
+    });
+
+    function makePoly(points) {
+      const shape = new THREE.Shape(points.map(([x,y]) => p(x,y)));
+      const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      return new THREE.Mesh(geo, material);
+    }
+
+    // Key SVG coordinates (original space):
+    // Outer:  T(43.3,0)  R(86.6,75)  B(43.3,150)  L(0,75)  C(43.3,75)
+    // Holes:  lower-left void: HR1(10.78,74.97) C(43.3,75) HR2(27.03,103.09)
+    //         upper-right void: C(43.3,75) HL1(59.58,46.9) HL2(75.83,75.11)
+    //
+    // Three solid regions of the SVG fill:
+    //
+    //  Region A — upper-left kite:  T, L, HR1, C, HL1
+    //    = T(43.3,0) → L(0,75) → HR1(10.78,74.97) → C(43.3,75) → HL1(59.58,46.9)
+    //
+    //  Region B — lower-right kite: C, HL2, R, B, HR2
+    //    = C(43.3,75) → HL2(75.83,75.11) → R(86.6,75) → B(43.3,150) → HR2(27.03,103.09)
+    //    wait — that crosses. Let me just split into safe triangles.
+
+    // Safe tiling into 6 triangles (verified no overlap, full coverage of solid area):
+    // The two holes split the diamond into 6 triangular solid pieces:
+
+    const pieces = [
+      // Upper-left solid region (T → L → HR1 → C → HL1, split into tris)
+      [[43.3,0],  [0,75],       [10.78,74.97]],   // far-left tri
+      [[43.3,0],  [10.78,74.97],[43.3,75]    ],   // left-centre tri
+      [[43.3,0],  [43.3,75],    [59.58,46.9] ],   // centre-upper tri
+      // Lower-right solid region
+      [[86.6,75], [43.3,150],   [27.03,103.09]],  // far-right-bottom tri
+      [[86.6,75], [27.03,103.09],[43.3,75]   ],   // right-centre tri
+      [[86.6,75], [43.3,75],    [75.83,75.11]],   // centre-lower tri
+    ];
+
+    // Full diamond = 4 solid regions (2 voids punched through):
+    // Void A (lower-left): C(43.3,75) → HR1(10.78,74.97) → HR2(27.03,103.09)
+    // Void B (upper-right): C(43.3,75) → HL1(59.58,46.9) → HL2(75.83,75.11)
+    //
+    // 4 solid pieces that perfectly tile the remainder:
+
+    // 1. Upper-left wing: T → L → HR1 → C → HL1
+    const region1 = makePoly([[43.3,0],[0,75],[10.78,74.97],[43.3,75],[59.58,46.9]]);
+    group.add(region1);
+
+    // 2. Top-right outer triangle: T → HL1 → HL2 → R
+    const region2 = makePoly([[43.3,0],[59.58,46.9],[75.83,75.11],[86.6,75]]);
+    group.add(region2);
+
+    // 3. Lower-right wing: R → HL2 → C → HR2 → B
+    const region3 = makePoly([[86.6,75],[75.83,75.11],[43.3,75],[27.03,103.09],[43.3,150]]);
+    group.add(region3);
+
+    // 4. Bottom-left outer triangle: B → HR2 → HR1 → L
+    const region4 = makePoly([[43.3,150],[27.03,103.09],[10.78,74.97],[0,75]]);
+    group.add(region4);
+
+    // Centre the group
+    const box = new THREE.Box3().setFromObject(group);
+    const centre = box.getCenter(new THREE.Vector3());
+    group.position.sub(centre);
+
+    scene.add(group);
+    const mesh = group; // alias for rotation below
 
 
+
+    // ── Auto-rotate only, no user controls ───────────────────────
+
+    // ── Resize ────────────────────────────────────────────────────
+    window.addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+
+    let rotX = 0, rotY = 0;
+
+    // ── Animate ───────────────────────────────────────────────────
+    let autoRotate = true;
+
+    (function animate(t) {
+      requestAnimationFrame(animate);
+      rotY = t * 0.0005;
+      rotX = Math.sin(t * 0.0003) * 0.3;
+      mesh.rotation.x = rotX;
+      mesh.rotation.y = rotY;
+      renderer.render(scene, camera);
+    })(0);
+  </script>
 </body>
 </html>
