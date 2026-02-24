@@ -123,7 +123,7 @@
     // FINAL CLEAN APPROACH: just build 4 non-overlapping triangles manually:
 
     const extrudeSettings = {
-      depth: 18,
+      depth: 50,
       bevelEnabled: false,
     };
 
@@ -131,8 +131,8 @@
 
     const material = new THREE.MeshStandardMaterial({
       color: 0xFFD700,
-      metalness: 1.0,
-      roughness: 0.25,
+      metalness: 1,
+      roughness: 0.2,
       side: THREE.DoubleSide,
     });
 
@@ -219,7 +219,7 @@
     (function animate(t) {
       requestAnimationFrame(animate);
       rotY = t * 0.0005;
-      rotX = Math.sin(t * 0.0003) * 0.3;
+      rotX = Math.sin(t * 0.0003) * 0.1;
       mesh.rotation.x = rotX;
       mesh.rotation.y = rotY;
       renderer.render(scene, camera);
