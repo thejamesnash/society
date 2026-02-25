@@ -198,21 +198,21 @@
     group.position.sub(centre);
 
     const spectreShape = new THREE.Shape()
-      .moveTo( 0, -80 )
+      .moveTo( 0, -60 )
       .lineTo( 40, 0 )
-      .lineTo( 0, 80 )
+      .lineTo( 0, 60 )
       .lineTo( -40, 0 )
-      .lineTo( 0, -80 );
+      .lineTo( 0, -60 );
     
     const hole1 = new THREE.Shape()
       .moveTo( 0, 0 )
-      .lineTo( -28, 0 )
-      .lineTo( -14, -28 )
+      .lineTo( -30, 0 )
+      .lineTo( -15, -22.5 )
       .lineTo( 0, 0 );
     const hole2 = new THREE.Shape()
       .moveTo( 0, 0 )
-      .lineTo( 28, 0 )
-      .lineTo( 14, 28 )
+      .lineTo( 30, 0 )
+      .lineTo( 15, 22.5 )
       .lineTo( 0, 0 );
       
     spectreShape.holes.push(hole1);
