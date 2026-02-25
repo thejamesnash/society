@@ -257,7 +257,7 @@
     (function animate(t) {
       requestAnimationFrame(animate);
       rotY = t * 0.0005;
-      rotX = Math.sin(t * 0.0003) * 0.1;
+      rotX = Math.sin(t * 0.0003) * 0.3;
       mesh.rotation.x = rotX;
       mesh.rotation.y = rotY;
       renderer.render(scene, camera);
