@@ -178,26 +178,64 @@
 
     // 1. Upper-left wing: T → L → HR1 → C → HL1
     const region1 = makePoly([[43.3,0],[0,75],[10.78,74.97],[43.3,75],[59.58,46.9]]);
-    group.add(region1);
+    // group.add(region1);
 
     // 2. Top-right outer triangle: T → HL1 → HL2 → R
     const region2 = makePoly([[43.3,0],[59.58,46.9],[75.83,75.11],[86.6,75]]);
-    group.add(region2);
+    // group.add(region2);
 
     // 3. Lower-right wing: R → HL2 → C → HR2 → B
     const region3 = makePoly([[86.6,75],[75.83,75.11],[43.3,75],[27.03,103.09],[43.3,150]]);
-    group.add(region3);
+    // group.add(region3);
 
     // 4. Bottom-left outer triangle: B → HR2 → HR1 → L
     const region4 = makePoly([[43.3,150],[27.03,103.09],[10.78,74.97],[0,75]]);
-    group.add(region4);
+    // group.add(region4);
 
     // Centre the group
     const box = new THREE.Box3().setFromObject(group);
     const centre = box.getCenter(new THREE.Vector3());
     group.position.sub(centre);
 
+    const spectreShape = new THREE.Shape()
+      .moveTo( 0, -80 )
+      .lineTo( 40, 0 )
+      .lineTo( 0, 80 )
+      .lineTo( -40, 0 )
+      .lineTo( 0, -80 );
+    
+    const hole1 = new THREE.Shape()
+      .moveTo( 0, 0 )
+      .lineTo( -28, 0 )
+      .lineTo( -14, -28 )
+      .lineTo( 0, 0 );
+    const hole2 = new THREE.Shape()
+      .moveTo( 0, 0 )
+      .lineTo( 28, 0 )
+      .lineTo( 14, 28 )
+      .lineTo( 0, 0 );
+      
+    spectreShape.holes.push(hole1);
+    spectreShape.holes.push(hole2);
+
+    const extrusionSettings = {
+      depth: 30,
+      bevelEnabled: true,
+      bevelThickness: 1,
+      bevelSize: 2,
+      bevelSegments: 1,
+      material: 0,
+      extrudeMaterial: 1
+    };
+
+    const spectreGeo = new THREE.ExtrudeGeometry( spectreShape, extrusionSettings );
+    const spectreMesh = new THREE.Mesh( spectreGeo, material ) ;
+    
+    group.add( spectreMesh );
     scene.add(group);
+
+    
+
     const mesh = group; // alias for rotation below
 
 
