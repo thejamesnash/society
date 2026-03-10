@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WDFA</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+        --pink: rgb(251,178,182);
+        --green: rgb(52,81,77);
+    }
+    body { background: rgb(248, 245, 233); overflow: hidden; }    
+    main {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    h1 {
+      font: normal 500 2vw/1 Georgia;
+      color: rgb(251,178,182);
+      /* letter-spacing: -0.5vw; */
+      /* text-shadow: 0 0 10px #000; */
+    }
+    .box {
+        width: 100vw;
+        height: 80dvh;
+        background: transparent url(jar.png) center center no-repeat;
+        position: relative
+    }
+    .box:before {
+        content: '';
+        width: 40vw;
+        height: 44.5vw;
+        background-image: linear-gradient(to right, rgba(248, 245, 233, 0.8) 0%, rgba(248, 245, 233,0.5) 50%,  rgba(248, 245, 233,0.8) 100%) ;
+        position: absolute;
+        top: 29vw;
+        left: 30vw;
+        z-index: 1
+    }
+    .box:after {
+        content: '';
+        width: 20vw;
+        height: 20vw;
+        background: rgb(52,81,77) url(wdfa.jpg) no-repeat center center;
+        position: absolute;
+        top: 40vw;
+        left: 40vw;
+        background-size: 90%;
+        border-radius: 50%;
+        z-index: 3;
+    }
+    .flavours {
+        width: 100vw;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1vw;
+        padding-left: 3vw;
+    }
+    .flavour {
+        width: 18vw;
+        height: 18vw;
+        position: relative;
+        transform-style: preserve-3d;
+        perspective: 2000px;
+        perspective-origin: center center;
+        transform: rotate(0deg) scale(1);
+        transition: all 0.3s ease-in-out;
+    }
+    .flavour[data-count]:after {
+        content: attr(data-count);
+        position: absolute;
+        border-radius: 50%;
+        color: var(--pink);
+        background-color: var(--green);
+        z-index: 2;
+        width: 40px;
+        height: 40px;
+        transform: translate3d(0,0,500px);
+        top: 0;
+        right: 0;
+        font: normal 700 6vw/6vw Georgia;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .flavour p {
+        position: absolute;
+        bottom: 2vw;
+        left: 0;
+        width: 100%;
+        font: normal 500 2vw/1 Georgia;
+        text-align: center;
+        color: rgb(52,81,77);
+        
+    }
+    .flavour span {
+        margin-left: 2.5vw;
+        background: transparent url(https://img.freepik.com/free-photo/delicious-creamy-brown-glaze_23-2148917690.jpg?semt=ais_user_personalization&w=740&q=80) top left no-repeat;
+        
+        transform-style: preserve-3d;
+        display: block;
+        width: 10vw;
+        height: 10vw;
+        
+        transform-origin: top center;
+	    transform: translate3d(5vw,0,6vw) rotateX(65deg) rotateY(0deg) rotateZ(45deg);
+        border-radius:  1vw 0 0 0;
+        
+    }
+    .flavour span:before{
+        content: '';
+        transform-style: preserve-3d;
+        display: block;
+        width: 10vw;
+        height: 10vw;
+        background-color: orange;
+        transform-origin: top center;
+	    transform: translate3d(5vw,0,-5vw) rotateX(0deg) rotateY(90deg) rotateZ(0deg);
+         background: transparent url(https://img.freepik.com/free-photo/delicious-creamy-brown-glaze_23-2148917690.jpg?semt=ais_user_personalization&w=740&q=80) center right no-repeat;
+       filter: brightness(0.6);
+       border-radius: 0 1vw 0 0;
+
+    }
+    .flavour span:after {
+        content: '';
+        transform-style: preserve-3d;
+        display: block;
+        width: 10vw;
+        height: 10vw;
+        background-color: yellow;
+        transform-origin: top center;
+	    transform: translate3d(0vw,0,0vw) rotateX(-90deg) rotateY(0deg) rotateZ(0deg);
+        background: transparent url(https://img.freepik.com/free-photo/delicious-creamy-brown-glaze_23-2148917690.jpg?semt=ais_user_personalization&w=740&q=80) bottom left no-repeat;
+       filter: brightness(0.8);
+       border-radius: 0 0 0 1vw;
+    }
+    
+    @keyframes shake {
+        0% { transform: rotate(0deg) scale(1) }
+        33% { transform: rotate(-10deg) scale(1.25) }
+        66% { transform: rotate(10deg) scale(1.25)}
+        100% { transform: rotate(0deg)  scale(1.25)}
+    }
+    .flavour:hover {
+        transform: rotate(0deg) scale(1.25);
+        animation: shake 0.3s ease-in-out forwards;
+    }
+
+    .status h2 {
+        margin-top: 10vw;
+        font: normal 700 6vw/1 Georgia;
+        color: rgb(251,178,182);
+        text-align: center;
+        text-shadow: 3px 3px 0 rgb(52,81,77);
+    }
+    .status p {
+        font: normal 500 8vw/1 Georgia;
+        color: rgb(251,178,182);
+        text-align: center;
+        text-shadow: 3px 3px 0 rgb(52,81,77);
+    }
+
+
+    .box .flavour {
+        position: absolute;
+        filter:saturate(1.1);
+        transform: scale(0.9);
+    }
+    .box .flavour:nth-of-type(1) {
+        top: 60vw;
+        left: 54vw
+    }
+    .box .flavour:nth-of-type(2) {
+        top: 60vw;
+        left: 41vw
+    }
+    .box .flavour:nth-of-type(3) {
+        top: 60vw;
+        left: 28vw
+    }
+    .box .flavour:nth-of-type(4) {
+        top: 50vw;
+        left: 54vw
+    }
+    .box .flavour:nth-of-type(5) {
+        top: 50vw;
+        left: 41vw
+    }
+    .box .flavour:nth-of-type(6) {
+        top: 50vw;
+        left: 28vw
+    }
+    .box .flavour:nth-of-type(7) {
+        top: 40vw;
+        left: 54vw
+    }
+    .box .flavour:nth-of-type(8) {
+        top: 40vw;
+        left: 41vw
+    }
+    .box .flavour:nth-of-type(9) {
+        top: 40vw;
+        left: 28vw
+    }
+    .box .flavour:nth-of-type(10) {
+        top: 30vw;
+        left: 41vw
+    }
+   
+    </style>
+</head>
+<body>
+    <header>
+        <h1>We Don't Fudge About</h1>
+        <nav>
+            <ul>
+                <li><a href="#">About</a></li>
+                <li><a href="#">Flavours</a></li>
+                <li><a href="#">Buy</a></li>
+            </ul>
+        </nav>
+    </header>
+  <main>
+    <div class="status">
+        <h2>10 piece jar</h2>
+        <p>0 Selected</p>
+    </div>
+    <div class="box">
+        <div class="flavour">
+            <span></span>
+        </div>
+        <div class="flavour">
+            <span></span>
+        </div>
+        <div class="flavour">
+            <span></span>
+        </div>
+        <div class="flavour">
+            <span></span>
+        </div>
+        <div class="flavour">
+            <span></span>
+        </div>
+        <div class="flavour">
+            <span></span>
+        </div>
+        <div class="flavour">
+            <span></span>
+        </div>
+        <div class="flavour">
+            <span></span>
+        </div>
+        <div class="flavour">
+            <span></span>
+        </div>
+        <div class="flavour">
+            <span></span>
+        </div>
+    </div>
+    <div class="flavours">
+        <div class="flavour"  data-count="2">
+            <span></span>
+            <p>Lemon Pistachio</p>
+        </div>
+        <div class="flavour">
+            <span></span>
+            <p>Lemon Pistachio</p>
+        </div>
+        <div class="flavour">
+            <span></span>
+            <p>Lemon Pistachio</p>
+        </div>
+        <div class="flavour">
+            <span></span>
+            <p>Lemon Pistachio</p>
+        </div>
+        <div class="flavour">
+            <span></span>
+            <p>Lemon Pistachio</p>
+        </div>
+        <div class="flavour">
+            <span></span>
+            <p>Lemon Pistachio</p>
+        </div>
+        <div class="flavour">
+            <span></span>
+            <p>Lemon Pistachio</p>
+        </div>
+        <div class="flavour">
+            <span></span>
+            <p>Lemon Pistachio</p>
+        </div>
+        <div class="flavour">
+            <span></span>
+            <p>Lemon Pistachio</p>
+        </div>
+        <div class="flavour">
+            <span></span>
+            <p>Lemon Pistachio</p>
+        </div>
+        
+    </div>
+    <div class="actions">
+        <button>Reset</button>>
+        <button>Buy</button>>
+        <button>Undo</button>>
+    </div>
+  </main>
+</body>
+</html>
